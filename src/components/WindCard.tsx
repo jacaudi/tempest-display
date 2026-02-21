@@ -64,10 +64,6 @@ export function WindCard({ current, unit }: WindCardProps) {
           <span className="stat-value">{formatWind(current.windLull, unit)}</span>
         </div>
         <div className="wind-stat">
-          <span className="stat-label">Avg</span>
-          <span className="stat-value wind-avg">{formatWind(current.windAvg, unit)}</span>
-        </div>
-        <div className="wind-stat">
           <span className="stat-label">Gust</span>
           <span className="stat-value">{formatWind(current.windGust, unit)}</span>
         </div>
