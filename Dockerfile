@@ -5,21 +5,12 @@ FROM node:22-alpine AS frontend
 
 WORKDIR /build
 
-COPY package.json ./
-RUN npm install --legacy-peer-deps --ignore-scripts
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 
 COPY index.html vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
 COPY public/ public/
 COPY src/ src/
-
-# VITE_ENABLE_RADAR: set to 'false' to disable the radar card (default: true)
-ARG VITE_ENABLE_RADAR=true
-ENV VITE_ENABLE_RADAR=$VITE_ENABLE_RADAR
-
-# VITE_RADAR_TILE_HOST: override tile host to use a local caching proxy.
-# Leave unset to fetch tiles directly from https://tilecache.rainviewer.com
-ARG VITE_RADAR_TILE_HOST=""
-ENV VITE_RADAR_TILE_HOST=$VITE_RADAR_TILE_HOST
 
 RUN npm run build
 

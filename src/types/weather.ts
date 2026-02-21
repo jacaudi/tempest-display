@@ -124,15 +124,3 @@ export interface UserPreferences {
 
 export type ThemeName = 'liquid-glass' | 'midnight-aurora' | 'desert-sunset' | 'nord' | 'tokyo-night' | 'catppuccin-mocha' | 'the-grid';
 
-export interface RadarStation {
-  stationId: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  distanceKm: number;
-}
-
-export interface RadarFrame {
-  time: number;   // epoch seconds
-  path: string;   // RainViewer tile path prefix
-}

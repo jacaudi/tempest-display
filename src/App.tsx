@@ -13,12 +13,9 @@ import { LightningCard } from './components/LightningCard';
 import { ForecastStrip } from './components/ForecastStrip';
 import { StationHealth } from './components/StationHealth';
 import { AlmanacCard } from './components/AlmanacCard';
-import { RadarCard } from './components/RadarCard';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { ThemeName } from './types/weather';
 import './App.css';
-
-const RADAR_ENABLED = import.meta.env.VITE_ENABLE_RADAR !== 'false';
 
 function App() {
   const { station, current, forecast, status, almanac, isLoading, error, lastUpdated, refresh } =
@@ -78,7 +75,6 @@ function App() {
           {status && <StationHealth status={status} />}
           <ForecastStrip forecast={forecast} unit={prefs.temperatureUnit} />
           {almanac && <AlmanacCard almanac={almanac} unit={prefs.temperatureUnit} />}
-          {RADAR_ENABLED && station && <RadarCard station={station} />}
         </div>
       </main>
 

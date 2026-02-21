@@ -15,8 +15,6 @@ import type {
   HourlyForecast,
   StationStatus,
   StationAlmanac,
-  RadarStation,
-  RadarFrame,
 } from '../types/weather';
 import {
   stubCurrentObservation,
@@ -186,85 +184,5 @@ export function connectWebSocket(
   }, 3000);
 
   return { close: () => clearInterval(interval) };
-}
-
-// ---------------------------------------------------------------------------
-// Nearest NWS NEXRAD radar station
-// GET https://api.weather.gov/radar/stations
-// ---------------------------------------------------------------------------
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.asin(Math.sqrt(a));
-}
-
-export async function fetchNearestRadarStation(lat: number, lon: number): Promise<RadarStation> {
-  const res = await fetch('https://api.weather.gov/radar/stations', {
-    headers: { 'User-Agent': 'tempest-display/1.0 (weather station dashboard)' },
-  });
-  if (!res.ok) throw new Error('NWS radar stations unavailable');
-  const data = await res.json();
-
-  let nearest: RadarStation | null = null;
-  let minDist = Infinity;
-
-  for (const feature of data.features) {
-    // Only NEXRAD WSR-88D stations (skip TDWR and others)
-    if (feature.properties.stationType !== 'WSR-88D') continue;
-    const [fLon, fLat] = feature.geometry.coordinates as [number, number];
-    const dist = haversineKm(lat, lon, fLat, fLon);
-    if (dist < minDist) {
-      minDist = dist;
-      // stationIdentifier is the documented field; fall back to the last path
-      // segment of feature.id ("https://api.weather.gov/radar/stations/KATX")
-      const stationId: string =
-        feature.properties.stationIdentifier ??
-        feature.properties.stationId ??
-        (feature.id as string | undefined)?.split('/').pop() ??
-        '';
-      nearest = {
-        stationId,
-        name: feature.properties.name as string,
-        latitude: fLat,
-        longitude: fLon,
-        distanceKm: dist,
-      };
-    }
-  }
-
-  if (!nearest) throw new Error('No radar station found');
-  return nearest;
-}
-
-// ---------------------------------------------------------------------------
-// Live VCP (Volume Coverage Pattern) for a NEXRAD station
-// GET https://api.weather.gov/radar/stations/{stationId}
-// The RDA (Radar Data Acquisition) properties include volumeCoveragePattern.
-// ---------------------------------------------------------------------------
-export async function fetchRadarStationVcp(stationId: string): Promise<number | null> {
-  if (!stationId) return null;
-  const res = await fetch(`https://api.weather.gov/radar/stations/${stationId}`, {
-    headers: { 'User-Agent': 'tempest-display/1.0 (weather station dashboard)' },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return (data?.properties?.rda?.properties?.volumeCoveragePattern as number) ?? null;
-}
-
-// ---------------------------------------------------------------------------
-// Animated radar frames via RainViewer (NEXRAD-sourced, Leaflet-native)
-// GET https://api.rainviewer.com/public/weather-maps.json
-// ---------------------------------------------------------------------------
-export async function fetchRadarFrames(): Promise<RadarFrame[]> {
-  const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-  if (!res.ok) throw new Error('RainViewer unavailable');
-  const data = await res.json();
-
-  const past = (data.radar.past as Array<{ time: number; path: string }>).slice(-12);
-  return past.map(f => ({ time: f.time, path: f.path }));
 }
 
