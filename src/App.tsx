@@ -12,12 +12,16 @@ import { RainCard } from './components/RainCard';
 import { LightningCard } from './components/LightningCard';
 import { ForecastStrip } from './components/ForecastStrip';
 import { StationHealth } from './components/StationHealth';
+import { AlmanacCard } from './components/AlmanacCard';
+import { RadarCard } from './components/RadarCard';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { ThemeName } from './types/weather';
 import './App.css';
 
+const RADAR_ENABLED = import.meta.env.VITE_ENABLE_RADAR !== 'false';
+
 function App() {
-  const { station, current, forecast, status, isLoading, error, lastUpdated, refresh } =
+  const { station, current, forecast, status, almanac, isLoading, error, lastUpdated, refresh } =
     useWeatherData();
   const { prefs, setPrefs } = useUnits();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -64,7 +68,7 @@ function App() {
 
       <main className="dashboard">
         <div className="dashboard-grid">
-          <TemperatureHero current={current} unit={prefs.temperatureUnit} />
+          <TemperatureHero current={current} unit={prefs.temperatureUnit} precipProbability={forecast[0]?.precipProbability} />
           <WindCard current={current} unit={prefs.windUnit} />
           <HumidityCard current={current} tempUnit={prefs.temperatureUnit} />
           <PressureCard current={current} unit={prefs.pressureUnit} />
@@ -73,6 +77,8 @@ function App() {
           <LightningCard current={current} />
           {status && <StationHealth status={status} />}
           <ForecastStrip forecast={forecast} unit={prefs.temperatureUnit} />
+          {almanac && <AlmanacCard almanac={almanac} unit={prefs.temperatureUnit} />}
+          {RADAR_ENABLED && station && <RadarCard station={station} />}
         </div>
       </main>
 

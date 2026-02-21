@@ -5,6 +5,7 @@ import type {
   ForecastDay,
   HourlyForecast,
   StationStatus,
+  StationAlmanac,
 } from '../types/weather';
 import {
   fetchCurrentObservation,
@@ -12,6 +13,7 @@ import {
   fetchForecast,
   fetchHourlyForecast,
   fetchStationStatus,
+  fetchStationAlmanac,
   connectWebSocket,
 } from '../api/tempestApi';
 
@@ -21,6 +23,7 @@ export interface WeatherData {
   forecast: ForecastDay[];
   hourly: HourlyForecast[];
   status: StationStatus | null;
+  almanac: StationAlmanac | null;
   isLoading: boolean;
   error: string | null;
   lastUpdated: Date | null;
@@ -33,6 +36,7 @@ export function useWeatherData(stationId?: number): WeatherData {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [hourly, setHourly] = useState<HourlyForecast[]>([]);
   const [status, setStatus] = useState<StationStatus | null>(null);
+  const [almanac, setAlmanac] = useState<StationAlmanac | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -42,13 +46,14 @@ export function useWeatherData(stationId?: number): WeatherData {
       setIsLoading(true);
       setError(null);
 
-      const [stationData, obsData, forecastData, hourlyData, statusData] =
+      const [stationData, obsData, forecastData, hourlyData, statusData, almanacData] =
         await Promise.all([
           fetchStationMeta(stationId),
           fetchCurrentObservation(stationId),
           fetchForecast(stationId),
           fetchHourlyForecast(stationId),
           fetchStationStatus(stationId),
+          fetchStationAlmanac(stationId),
         ]);
 
       setStation(stationData);
@@ -56,6 +61,7 @@ export function useWeatherData(stationId?: number): WeatherData {
       setForecast(forecastData);
       setHourly(hourlyData);
       setStatus(statusData);
+      setAlmanac(almanacData);
       setLastUpdated(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load weather data');
@@ -86,6 +92,7 @@ export function useWeatherData(stationId?: number): WeatherData {
     forecast,
     hourly,
     status,
+    almanac,
     isLoading,
     error,
     lastUpdated,

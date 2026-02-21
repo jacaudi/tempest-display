@@ -14,6 +14,9 @@ import type {
   ForecastDay,
   HourlyForecast,
   StationStatus,
+  StationAlmanac,
+  RadarStation,
+  RadarFrame,
 } from '../types/weather';
 import {
   stubCurrentObservation,
@@ -21,6 +24,7 @@ import {
   stubForecast,
   stubHourlyForecast,
   stubStationStatus,
+  stubStationAlmanac,
 } from './stubData';
 
 const API_BASE = 'https://swd.weatherflow.com/swd/rest';
@@ -120,6 +124,17 @@ export async function fetchStationStatus(
 }
 
 // ---------------------------------------------------------------------------
+// Station almanac (historical highs/lows)
+// GET /observations/stn/{station_id}?token={token}&bucket=day|week|month|year
+// ---------------------------------------------------------------------------
+export async function fetchStationAlmanac(
+  _stationId?: number
+): Promise<StationAlmanac> {
+  void _stationId;
+  return Promise.resolve({ ...stubStationAlmanac });
+}
+
+// ---------------------------------------------------------------------------
 // WebSocket connection for real-time data
 // wss://ws.weatherflow.com/swd/data?token={token}
 // ---------------------------------------------------------------------------
@@ -144,21 +159,112 @@ export function connectWebSocket(
   // };
   // return { close: () => ws.close() };
 
-  // Stub: simulate updates every 60 seconds
+  // Stub: simulate real-time updates every 3 seconds (matching Tempest WebSocket cadence)
+  let windDir = stubCurrentObservation.windDirection;
+  let windAvg = stubCurrentObservation.windAvg;
+  let windGust = stubCurrentObservation.windGust;
+  let windLull = stubCurrentObservation.windLull;
+
   const interval = setInterval(() => {
-    const jitter = (base: number, range: number) =>
-      base + (Math.random() - 0.5) * range;
+    const jitter = (val: number, step: number, min = 0, max = Infinity) =>
+      Math.min(max, Math.max(min, val + (Math.random() - 0.5) * step));
+
+    // Wind direction drifts slowly, ±5° per tick
+    windDir = (windDir + (Math.random() - 0.5) * 10 + 360) % 360;
+    windAvg = jitter(windAvg, 0.4, 0, 20);
+    windGust = jitter(windGust, 0.6, windAvg, 30);
+    windLull = jitter(windLull, 0.3, 0, windAvg);
+
     _onObservation({
       ...stubCurrentObservation,
       timestamp: Date.now() / 1000,
-      airTemperature: jitter(stubCurrentObservation.airTemperature, 1),
-      windAvg: Math.max(0, jitter(stubCurrentObservation.windAvg, 1.5)),
-      windGust: Math.max(0, jitter(stubCurrentObservation.windGust, 2)),
-      windDirection: (stubCurrentObservation.windDirection + Math.floor(Math.random() * 30 - 15) + 360) % 360,
-      relativeHumidity: Math.min(100, Math.max(0, jitter(stubCurrentObservation.relativeHumidity, 3))),
-      solarRadiation: Math.max(0, jitter(stubCurrentObservation.solarRadiation, 50)),
+      windAvg,
+      windGust,
+      windLull,
+      windDirection: Math.round(windDir),
     });
-  }, 60000);
+  }, 3000);
 
   return { close: () => clearInterval(interval) };
 }
+
+// ---------------------------------------------------------------------------
+// Nearest NWS NEXRAD radar station
+// GET https://api.weather.gov/radar/stations
+// ---------------------------------------------------------------------------
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+export async function fetchNearestRadarStation(lat: number, lon: number): Promise<RadarStation> {
+  const res = await fetch('https://api.weather.gov/radar/stations', {
+    headers: { 'User-Agent': 'tempest-display/1.0 (weather station dashboard)' },
+  });
+  if (!res.ok) throw new Error('NWS radar stations unavailable');
+  const data = await res.json();
+
+  let nearest: RadarStation | null = null;
+  let minDist = Infinity;
+
+  for (const feature of data.features) {
+    // Only NEXRAD WSR-88D stations (skip TDWR and others)
+    if (feature.properties.stationType !== 'WSR-88D') continue;
+    const [fLon, fLat] = feature.geometry.coordinates as [number, number];
+    const dist = haversineKm(lat, lon, fLat, fLon);
+    if (dist < minDist) {
+      minDist = dist;
+      // stationIdentifier is the documented field; fall back to the last path
+      // segment of feature.id ("https://api.weather.gov/radar/stations/KATX")
+      const stationId: string =
+        feature.properties.stationIdentifier ??
+        feature.properties.stationId ??
+        (feature.id as string | undefined)?.split('/').pop() ??
+        '';
+      nearest = {
+        stationId,
+        name: feature.properties.name as string,
+        latitude: fLat,
+        longitude: fLon,
+        distanceKm: dist,
+      };
+    }
+  }
+
+  if (!nearest) throw new Error('No radar station found');
+  return nearest;
+}
+
+// ---------------------------------------------------------------------------
+// Live VCP (Volume Coverage Pattern) for a NEXRAD station
+// GET https://api.weather.gov/radar/stations/{stationId}
+// The RDA (Radar Data Acquisition) properties include volumeCoveragePattern.
+// ---------------------------------------------------------------------------
+export async function fetchRadarStationVcp(stationId: string): Promise<number | null> {
+  if (!stationId) return null;
+  const res = await fetch(`https://api.weather.gov/radar/stations/${stationId}`, {
+    headers: { 'User-Agent': 'tempest-display/1.0 (weather station dashboard)' },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return (data?.properties?.rda?.properties?.volumeCoveragePattern as number) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Animated radar frames via RainViewer (NEXRAD-sourced, Leaflet-native)
+// GET https://api.rainviewer.com/public/weather-maps.json
+// ---------------------------------------------------------------------------
+export async function fetchRadarFrames(): Promise<RadarFrame[]> {
+  const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+  if (!res.ok) throw new Error('RainViewer unavailable');
+  const data = await res.json();
+
+  const past = (data.radar.past as Array<{ time: number; path: string }>).slice(-12);
+  return past.map(f => ({ time: f.time, path: f.path }));
+}
+

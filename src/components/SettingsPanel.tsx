@@ -1,4 +1,4 @@
-import type { UserPreferences, ThemeName } from '../types/weather';
+import type { UserPreferences } from '../types/weather';
 import { getThemeList } from '../themes/themes';
 
 interface SettingsPanelProps {

@@ -47,9 +47,15 @@ export function HumidityCard({ current, tempUnit }: HumidityCardProps) {
         </div>
       </div>
 
-      <div className="humidity-detail">
-        <span className="detail-label">Dew Point</span>
-        <span className="detail-value">{formatTemp(current.dewPoint, tempUnit)}</span>
+      <div className="humidity-stats-row">
+        <div className="humidity-stat">
+          <span className="humidity-stat-label">Dew Point</span>
+          <span className="humidity-stat-value">{formatTemp(current.dewPoint, tempUnit)}</span>
+        </div>
+        <div className="humidity-stat">
+          <span className="humidity-stat-label">Wet Bulb</span>
+          <span className="humidity-stat-value">{formatTemp(current.wetBulbTemperature, tempUnit)}</span>
+        </div>
       </div>
     </GlassCard>
   );

@@ -19,22 +19,24 @@ export function LightningCard({ current }: LightningCardProps) {
       </div>
 
       <div className="lightning-content">
-        <div className="lightning-stat">
-          <span className="lightning-count">{current.lightningStrikeCount}</span>
-          <span className="lightning-label">strikes detected</span>
-        </div>
-        {hasStrikes && current.lightningStrikeAvgDistance > 0 && (
+        <div className="lightning-stats-row">
           <div className="lightning-stat">
-            <span className="lightning-distance">
-              {current.lightningStrikeAvgDistance.toFixed(1)} km
+            <span className="lightning-count">{current.lightningStrikeCount}</span>
+            <span className="lightning-label">strikes today</span>
+          </div>
+          <div className="lightning-stat">
+            <span className={`lightning-distance ${hasStrikes ? '' : 'lightning-distance-none'}`}>
+              {hasStrikes && current.lightningStrikeAvgDistance > 0
+                ? `${current.lightningStrikeAvgDistance.toFixed(1)} km`
+                : '—'}
             </span>
             <span className="lightning-label">avg distance</span>
           </div>
-        )}
+        </div>
         {!hasStrikes && (
           <div className="lightning-clear">
             <span className="lightning-clear-text">No lightning detected</span>
-            <span className="lightning-range-text">Detection range: up to 40 km</span>
+            <span className="lightning-range-text">Range: up to 40 km</span>
           </div>
         )}
       </div>

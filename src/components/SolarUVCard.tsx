@@ -75,7 +75,7 @@ export function SolarUVCard({ current }: SolarUVCardProps) {
         <div className="solar-section">
           <div className="solar-stat">
             <span className="stat-label">Solar Radiation</span>
-            <span className="stat-value">{current.solarRadiation} W/m²</span>
+            <span className="stat-value">{Math.round(current.solarRadiation * 10) / 10} W/m²</span>
             <span className="stat-sublabel">{solarIntensity(current.solarRadiation)}</span>
           </div>
           <div className="solar-stat">

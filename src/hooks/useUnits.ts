@@ -10,9 +10,9 @@ import type {
 const DEFAULT_PREFS: UserPreferences = {
   temperatureUnit: 'F',
   windUnit: 'mph',
-  pressureUnit: 'inHg',
+  pressureUnit: 'mb',
   rainUnit: 'in',
-  theme: 'liquid-glass',
+  theme: 'nord',
 };
 
 function loadPrefs(): UserPreferences {

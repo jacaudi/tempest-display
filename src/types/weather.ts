@@ -40,18 +40,20 @@ export interface CurrentObservation {
   pressureTrend: PressureTrend;
 }
 
-export enum PrecipitationType {
-  None = 0,
-  Rain = 1,
-  Hail = 2,
-  RainAndHail = 3,
-}
+export const PrecipitationType = {
+  None: 0,
+  Rain: 1,
+  Hail: 2,
+  RainAndHail: 3,
+} as const;
+export type PrecipitationType = typeof PrecipitationType[keyof typeof PrecipitationType];
 
-export enum PressureTrend {
-  Falling = 'falling',
-  Steady = 'steady',
-  Rising = 'rising',
-}
+export const PressureTrend = {
+  Falling: 'falling',
+  Steady: 'steady',
+  Rising: 'rising',
+} as const;
+export type PressureTrend = typeof PressureTrend[keyof typeof PressureTrend];
 
 export interface ForecastDay {
   dayNum: number;
@@ -93,6 +95,25 @@ export type WindUnit = 'ms' | 'mph' | 'kph' | 'kts';
 export type PressureUnit = 'mb' | 'inHg' | 'hPa';
 export type RainUnit = 'mm' | 'in';
 
+export interface TempRecord {
+  high: number;     // °C
+  highDate: string; // human label, e.g. "Today", "Feb 15"
+  low: number;      // °C
+  lowDate: string;
+}
+
+export interface StationAlmanac {
+  today: TempRecord;
+  week: TempRecord;
+  month: TempRecord;
+  year: TempRecord;
+  sunrise: number;        // epoch seconds
+  sunset: number;         // epoch seconds
+  moonPhase: number;      // 0–1 (0 = new, 0.5 = full)
+  moonPhaseName: string;
+  moonIllumination: number; // 0–1
+}
+
 export interface UserPreferences {
   temperatureUnit: TemperatureUnit;
   windUnit: WindUnit;
@@ -101,4 +122,17 @@ export interface UserPreferences {
   theme: string;
 }
 
-export type ThemeName = 'liquid-glass' | 'midnight-aurora' | 'desert-sunset' | 'arctic-frost';
+export type ThemeName = 'liquid-glass' | 'midnight-aurora' | 'desert-sunset' | 'nord' | 'tokyo-night' | 'catppuccin-mocha' | 'the-grid';
+
+export interface RadarStation {
+  stationId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+}
+
+export interface RadarFrame {
+  time: number;   // epoch seconds
+  path: string;   // RainViewer tile path prefix
+}

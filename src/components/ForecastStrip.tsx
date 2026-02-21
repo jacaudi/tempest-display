@@ -1,6 +1,7 @@
 import type { ForecastDay, TemperatureUnit } from '../types/weather';
 import { formatTemp } from '../hooks/useUnits';
 import { GlassCard } from './GlassCard';
+import { WeatherIcon } from './WeatherIcon';
 
 interface ForecastStripProps {
   forecast: ForecastDay[];
@@ -11,20 +12,6 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function conditionIcon(icon: string): string {
-  switch (icon) {
-    case 'clear-day': return '☀';
-    case 'clear-night': return '🌙';
-    case 'partly-cloudy-day': return '⛅';
-    case 'partly-cloudy-night': return '☁';
-    case 'cloudy': return '☁';
-    case 'rainy': return '🌧';
-    case 'thunderstorm': return '⛈';
-    case 'windy': return '💨';
-    case 'snow': return '❄';
-    default: return '⛅';
-  }
-}
 
 function getDayName(dayNum: number, monthNum: number): string {
   const now = new Date();
@@ -53,7 +40,7 @@ export function ForecastStrip({ forecast, unit }: ForecastStripProps) {
             <span className="forecast-date">
               {MONTH_NAMES[day.monthNum - 1]} {day.dayNum}
             </span>
-            <span className="forecast-icon">{conditionIcon(day.icon)}</span>
+            <div className="forecast-icon"><WeatherIcon icon={day.icon} size={36} /></div>
             <span className="forecast-condition">{day.conditions}</span>
             <div className="forecast-temps">
               <span className="forecast-high">{formatTemp(day.airTempHigh, unit)}</span>

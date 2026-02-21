@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import type { CurrentObservation, WindUnit } from '../types/weather';
 import { formatWind } from '../hooks/useUnits';
 import { GlassCard } from './GlassCard';
@@ -16,6 +17,19 @@ function degToCompass(deg: number): string {
 export function WindCard({ current, unit }: WindCardProps) {
   const compassDir = degToCompass(current.windDirection);
 
+  // Track accumulated rotation so the needle always takes the shortest arc
+  const [displayDeg, setDisplayDeg] = useState(current.windDirection);
+  const prevRawRef = useRef(current.windDirection);
+
+  useEffect(() => {
+    const raw = current.windDirection;
+    let delta = raw - prevRawRef.current;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    setDisplayDeg(prev => prev + delta);
+    prevRawRef.current = raw;
+  }, [current.windDirection]);
+
   return (
     <GlassCard className="wind-card">
       <div className="card-header">
@@ -33,7 +47,7 @@ export function WindCard({ current, unit }: WindCardProps) {
           <span className="compass-label compass-w">W</span>
           <div
             className="compass-needle"
-            style={{ transform: `rotate(${current.windDirection}deg)` }}
+            style={{ transform: `rotate(${displayDeg}deg)` }}
           >
             <div className="needle-arrow" />
           </div>

@@ -1,0 +1,45 @@
+services:
+
+  # -------------------------------------------------------------------------
+  # Caching nginx proxy for RainViewer radar tiles.
+  # Tiles are cached on disk in the `radar_tile_cache` volume (up to 2 GB,
+  # 6-hour TTL) so the browser never hits the RainViewer CDN twice for the
+  # same tile and is never rate-limited.
+  # Accessible from the browser at http://localhost:8081
+  # -------------------------------------------------------------------------
+  radar-cache:
+    build:
+      context: ./nginx
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - radar_tile_cache:/var/cache/nginx/radar
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # -------------------------------------------------------------------------
+  # Tempest weather station SPA.
+  # VITE_RADAR_TILE_HOST points the tile URLs at the local nginx cache so
+  # the browser fetches tiles from localhost:8081 instead of RainViewer
+  # directly. Remove or unset this var to revert to direct CDN access.
+  # -------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      args:
+        VITE_ENABLE_RADAR: "true"
+        VITE_RADAR_TILE_HOST: "http://localhost:8081"
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      radar-cache:
+        condition: service_healthy
+
+volumes:
+  radar_tile_cache:
