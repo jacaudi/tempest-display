@@ -17,7 +17,7 @@ RUN npm run build
 # =============================================================
 # Stage 2 — Compile the Go static-file server with embedded dist
 # =============================================================
-FROM golang:1.23-alpine AS backend
+FROM golang:1.26-alpine AS backend
 
 WORKDIR /build
 
