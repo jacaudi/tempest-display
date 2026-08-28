@@ -1,3 +1,20 @@
+> [!IMPORTANT]
+> ## This project has moved
+>
+> **tempest-display has been succeeded by [stormglass](https://github.com/jacaudi/stormglass).**
+>
+> Stormglass is the same idea, finished: this dashboard was carried over and
+> rebuilt on top of a real backend, so it reads live observations from your own
+> Tempest station over UDP instead of running on stub data. It also stores your
+> history, exports metrics, and ships as a single container.
+>
+> If you came here looking for a Tempest weather dashboard, go to
+> **[jacaudi/stormglass](https://github.com/jacaudi/stormglass)** instead.
+>
+> This repository was **archived on 28 August 2026** and is now read-only. It
+> stays online for reference only — it is no longer maintained, and its open
+> pull requests were closed at archive time.
+
 # tempest-display
 
 A weather station dashboard SPA for [WeatherFlow Tempest](https://weatherflow.com/tempest-weather-system/) stations. Built with React 19 + TypeScript, served by a Go static-file server embedded in a single scratch Docker image.
